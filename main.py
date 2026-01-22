@@ -1,68 +1,63 @@
+from auth import GoogleAuth
 import pandas as pd
 from datetime import datetime
-from fpdf import FPDF
 
-# Ye sirf Report ke upar print hoga (App Owner)
-OWNER_NAME = "Adil Mumtaz"
-OWNER_CONTACT = "03218537625"
+# --- Theme Colors ---
+G = '\033[92m' # Green
+R = '\033[91m' # Red
+B = '\033[94m' # Blue
+Y = '\033[93m' # Yellow
+W = '\033[0m'  # Reset
 
-class KhataBookApp:
+class KhataBookCloud:
     def __init__(self):
-        self.file = "khata_records.csv"
+        self.file = "cloud_khata_backup.csv"
         try: self.df = pd.read_csv(self.file)
-        except: self.df = pd.DataFrame(columns=["Date", "Cust_Name", "Cust_Mobile", "Amount", "Desc", "Type"])
+        except: self.df = pd.DataFrame(columns=["Date", "Name", "Mobile", "Amount", "Desc", "Type"])
 
-    def add_entry(self):
-        print("\n--- Nayi Entry (Transaction) ---")
-        c_name = input("Customer ka Naam: ")
-        c_mobile = input("Customer ka Mobile Number: ") # Yahan customer ka number aayega
-        amt = input("Raqam (PKR): ")
-        description = input("Tafseel (Description): ")
-        t_type = input("Paisa Aaya (In) ya Gaya (Out): ").lower()
+    def show_dashboard(self):
+        # Top Bar (Like Screenshot)
+        print(f"\n{B}≡ Cashbook{W}          🔍  {Y}📄{W}  {B}📅{W}  ⋮")
+        print(f"{'—'*45}")
+        print(f" All | Daily | Week | Month | Year")
+        print(f"{'—'*45}")
 
-        # Data save karna
-        new_row = {
-            "Date": datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "Cust_Name": c_name,
-            "Cust_Mobile": c_mobile,
-            "Amount": amt,
-            "Desc": description,
-            "Type": t_type
-        }
+        c_total = self.df[self.df['Type'] == 'Credit']['Amount'].sum()
+        d_total = self.df[self.df['Type'] == 'Debit']['Amount'].sum()
+
+        if self.df.empty:
+            print(f"\n      {Y}No transactions found in Cloud.{W}")
+        else:
+            for _, row in self.df.iterrows():
+                color = G if row['Type'] == 'Credit' else R
+                print(f" {row['Name'].ljust(15)} | {row['Desc'].ljust(15)} {color}{row['Amount']}{W}")
+                print(f" {W}at {row['Date']}")
+                print("-" * 45)
+
+        # Bottom Summary Blocks
+        print(f"\n{G}  + Credit          {R} - Debit          {B}   Total{W}")
+        print(f"   {c_total:,.0f}               {d_total:,.0f}               {c_total-d_total:,.0f}")
+        print("="*45)
+
+    def add_entry(self, t_type):
+        name = input("Customer Name: ")
+        phone = input("Customer Mobile: ")
+        amt = float(input("Amount: "))
+        desc = input("Description: ")
+        
+        new_row = {"Date": datetime.now().strftime("%d %b, %I:%M %p"), 
+                    "Name": name, "Mobile": phone, "Amount": amt, "Desc": desc, "Type": t_type}
         self.df = pd.concat([self.df, pd.DataFrame([new_row])], ignore_index=True)
         self.df.to_csv(self.file, index=False)
 
-        # WhatsApp Message Link (Sirf Customer ke liye)
-        message = f"Salam {c_name}, aapka PKR {amt} ka hisab update ho gaya hai. {description}."
-        wa_link = f"https://wa.me/92{c_mobile[1:]}?text={message.replace(' ', '%20')}"
-        
-        print(f"\n✅ Entry Saved!")
-        print(f"📲 Customer ko WhatsApp bhejne ke liye link: {wa_link}")
-
-    def export_all(self):
-        # Excel File
-        self.df.to_excel("Mukammal_Khata.xlsx", index=False)
-        
-        # PDF File with Owner Header
-        pdf = FPDF()
-        pdf.add_page()
-        pdf.set_font("Arial", 'B', 16)
-        pdf.cell(200, 10, txt=f"Khata Book: {OWNER_NAME}", ln=True, align='C')
-        pdf.set_font("Arial", size=10)
-        pdf.cell(200, 10, txt=f"Owner Contact: {OWNER_CONTACT}", ln=True, align='C')
-        pdf.output("Khata_Report.pdf")
-        print("\n📁 Excel aur PDF files download ke liye tayyar hain!")
-
-# --- Application Loop ---
-khata = KhataBookApp()
-while True:
-    print(f"\n--- {OWNER_NAME} Digital Ledger ---")
-    print("1. Add Entry (Name/Customer Mobile/Amount)")
-    print("2. Download Reports (Excel/PDF)")
-    print("3. Exit")
-    
-    choice = input("Option select karein: ")
-    if choice == '1': khata.add_entry()
-    elif choice == '2': khata.export_all()
-    elif choice == '3': break
- 
+# --- Execution ---
+auth = GoogleAuth()
+if auth.login():
+    app = KhataBookCloud()
+    while True:
+        app.show_dashboard()
+        print(f"{G}[+] Credit{W}    {R}[-] Debit{W}    [E] Exit")
+        cmd = input("\nSelect: ").upper()
+        if cmd == '+': app.add_entry("Credit")
+        elif cmd == '-': app.add_entry("Debit")
+        elif cmd == 'E': break
