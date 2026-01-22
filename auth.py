@@ -1,20 +1,17 @@
-import os
-
 class GoogleAuth:
     def __init__(self):
-        self.authorized_email = "palajalalpuria1965@gmail.com"
+        self.current_user = None
 
     def login(self):
         print("\n" + "="*40)
-        print(f"        G {RED}o{Y}o{G}g{B}l{RED}e{W} Login Service")
+        print("      WELCOME TO CASHBOOK APP")
         print("="*40)
-        email = input("Enter your Gmail: ")
+        email = input("Apni Gmail ID se Login karein: ")
         
-        if email == self.authorized_email:
-            print(f"\n{G}✅ Authentication Successful!{W}")
-            print(f"Welcome, Adil Mumtaz. Your data is being synced...")
+        if "@gmail.com" in email.lower():
+            self.current_user = email.lower()
+            print(f"✅ Welcome! Aapka data sync ho raha hai: {self.current_user}")
             return True
         else:
-            print(f"\n{R}❌ Access Denied!{W}")
-            print("This Gmail is not linked to this KhataBook.")
+            print("❌ Galat Email! Baraye meherbani sahi Gmail likhein.")
             return False
