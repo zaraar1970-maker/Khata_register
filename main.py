@@ -2,72 +2,66 @@ import pandas as pd
 from datetime import datetime
 from fpdf import FPDF
 
-# Aapki details jo screenshots mein thi
-USER_NAME = "Adil Mumtaz"
-USER_PHONE = "03218537625"
-USER_EMAIL = "palajalalpuria1965@gmail.com"
+# Ye sirf Report ke upar print hoga (App Owner)
+OWNER_NAME = "Adil Mumtaz"
+OWNER_CONTACT = "03218537625"
 
-class KhataApp:
+class KhataBookApp:
     def __init__(self):
-        self.file_name = "khata_data.csv"
-        try:
-            self.df = pd.read_csv(self.file_name)
-        except:
-            # Naya register banaya agar file maujood nahi hai
-            self.df = pd.DataFrame(columns=["Date", "Name", "Mobile", "Amount", "Description", "Type"])
+        self.file = "khata_records.csv"
+        try: self.df = pd.read_csv(self.file)
+        except: self.df = pd.DataFrame(columns=["Date", "Cust_Name", "Cust_Mobile", "Amount", "Desc", "Type"])
 
     def add_entry(self):
-        print("\n" + "="*30)
-        print("      NEW ENTRY")
-        print("="*30)
-        name = input("Customer Name: ")
-        phone = input("Customer Mobile: ")
-        amount = float(input("Amount (PKR): "))
-        desc = input("Description: ")
-        # Type 'in' matlab paisa aaya, 'out' matlab paisa gaya
-        entry_type = input("Type (In/Out): ").lower()
+        print("\n--- Nayi Entry (Transaction) ---")
+        c_name = input("Customer ka Naam: ")
+        c_mobile = input("Customer ka Mobile Number: ") # Yahan customer ka number aayega
+        amt = input("Raqam (PKR): ")
+        description = input("Tafseel (Description): ")
+        t_type = input("Paisa Aaya (In) ya Gaya (Out): ").lower()
 
+        # Data save karna
         new_row = {
             "Date": datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "Name": name,
-            "Mobile": phone,
-            "Amount": amount,
-            "Description": desc,
-            "Type": entry_type
+            "Cust_Name": c_name,
+            "Cust_Mobile": c_mobile,
+            "Amount": amt,
+            "Desc": description,
+            "Type": t_type
         }
-        
         self.df = pd.concat([self.df, pd.DataFrame([new_row])], ignore_index=True)
-        self.df.to_csv(self.file_name, index=False)
-        print("\n✅ Transaction Saved Successfully!")
+        self.df.to_csv(self.file, index=False)
 
-    def show_summary(self):
-        total_in = self.df[self.df['Type'] == 'in']['Amount'].sum()
-        total_out = self.df[self.df['Type'] == 'out']['Amount'].sum()
-        balance = total_in - total_out
+        # WhatsApp Message Link (Sirf Customer ke liye)
+        message = f"Salam {c_name}, aapka PKR {amt} ka hisab update ho gaya hai. {description}."
+        wa_link = f"https://wa.me/92{c_mobile[1:]}?text={message.replace(' ', '%20')}"
         
-        print("\n" + "*"*40)
-        print(f"KHATA SUMMARY FOR {USER_NAME}")
-        print(f"Contact: {USER_PHONE}")
-        print("-" * 40)
-        print(f"Total Cash In : PKR {total_in}")
-        print(f"Total Cash Out: PKR {total_out}")
-        print(f"NET BALANCE   : PKR {balance}")
-        print("*"*40)
+        print(f"\n✅ Entry Saved!")
+        print(f"📲 Customer ko WhatsApp bhejne ke liye link: {wa_link}")
 
-# Main Loop
-app = KhataApp()
+    def export_all(self):
+        # Excel File
+        self.df.to_excel("Mukammal_Khata.xlsx", index=False)
+        
+        # PDF File with Owner Header
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", 'B', 16)
+        pdf.cell(200, 10, txt=f"Khata Book: {OWNER_NAME}", ln=True, align='C')
+        pdf.set_font("Arial", size=10)
+        pdf.cell(200, 10, txt=f"Owner Contact: {OWNER_CONTACT}", ln=True, align='C')
+        pdf.output("Khata_Report.pdf")
+        print("\n📁 Excel aur PDF files download ke liye tayyar hain!")
+
+# --- Application Loop ---
+khata = KhataBookApp()
 while True:
-    print(f"\nWelcome to {USER_NAME}'s Digital Khata")
-    print("1. Add Transaction (Name/Mobile/Amount/Desc)")
-    print("2. View Ledger Summary")
+    print(f"\n--- {OWNER_NAME} Digital Ledger ---")
+    print("1. Add Entry (Name/Customer Mobile/Amount)")
+    print("2. Download Reports (Excel/PDF)")
     print("3. Exit")
     
-    choice = input("\nApna option select karein: ")
-    
-    if choice == '1':
-        app.add_entry()
-    elif choice == '2':
-        app.show_summary()
-    elif choice == '3':
-        print("KhataBook band ho rahi hai. Allah Hafiz!")
-        break
+    choice = input("Option select karein: ")
+    if choice == '1': khata.add_entry()
+    elif choice == '2': khata.export_all()
+    elif choice == '3': break
