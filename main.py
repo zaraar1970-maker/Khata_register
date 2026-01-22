@@ -65,3 +65,4 @@ while True:
     if choice == '1': khata.add_entry()
     elif choice == '2': khata.export_all()
     elif choice == '3': break
+ 
